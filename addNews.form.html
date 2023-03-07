@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="news.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <title>Nouvelle annonce</title>
+</head>
+<body>
+<form action="./addNews.api.php" method="post" enctype="multipart/form-data">
+
+    <div class="container add-news">
+        <div>
+            <label for="title">Titre</label>
+            <input type="text" id="title" name="title">
+        </div>
+        <div>
+            <label for="content">Contenu</label>
+            <textarea id="content" name="content" style="width: 100%; height: 150px;"></textarea>
+        </div>
+        <div>
+            <label for="upload">Upload image</label>
+            <input type="file" id="upload" name="image">
+        </div>
+        <div>
+            <label for="pdf">Upload PDF</label>
+            <input type="file" id="pdf" name="pdf">
+        </div>
+        <div>
+            <label for="link">Lien</label>
+            <input type="text" id="link" name="link">
+        </div>
+        <div>
+            <input type="checkbox" id="status" name="status" value="enabled" >
+            <label for="status">Annonce active</label>
+        </div>
+        <div>
+            <label for="date-publication">Publication postérieure</label>
+            <input type="datetime-local" id="date-publication" name="date_publication">
+        </div>
+        <div>
+            <button type="submit">Soumettre</button>
+        </div>
+    </div>
+</form>
+<menu class="main-menu position-fixed-bottom full-width mb-none">
+    <a href="admin.news.view.php">ADMIN</a>
+    <a href="news.view.php">NEWS</a>
+    <a href="addNews.form.html">ADD</a>
+</menu>
+</body>
+</html>
+

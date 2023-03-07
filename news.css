@@ -1,0 +1,117 @@
+/* Menu footer */
+.main-menu {
+    display: flex;
+    justify-content: space-around;
+    padding: 1rem;
+    margin: 0;
+}
+
+.main-menu a {
+    color: #de613b;
+    text-decoration: none;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    padding:25px 20px;
+}
+
+
+#news-container {
+    background-color: hsla(220, 23%, 97%, 1);
+    display: inline-block;
+    justify-content: center;
+}
+
+
+#load-more {
+    margin: 2rem 0 3rem 5.5rem;
+    display: inline;
+    padding: 10px 25px;
+    text-align: center;
+    background-color: #de613b;
+    color: white;
+    border: 1px #de613b solid;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.btn-secondary {
+    margin: 2rem 0 0 7rem;
+}
+.container #load-more:hover {
+    background-color: #d86c4b;
+}
+
+#news-container .card-body {
+    background-color: white;
+    box-shadow: 0 5px 25px 15px rgba(0, 0, 0, 0.05);
+    width: 19rem;
+    margin: 1.5rem;
+    text-align: center;
+    display: none;
+}
+
+.container #news-container .box:nth-child(1),
+.container #news-container .box:nth-child(2),
+.container #news-container .box:nth-child(3)
+.container #news-container .box:nth-child(4),
+.container #news-container .box:nth-child(5),
+.container #news-container .box:nth-child(6),
+.container #news-container .box:nth-child(7),
+.container #news-container .box:nth-child(8),
+.container #news-container .box:nth-child(9),
+.container #news-container .box:nth-child(10)
+{
+    display: block;
+}
+
+#news-container .card-title {
+    text-align: center;
+    color: #de613b;
+    padding-top: 1rem;
+}
+
+#news-container p {
+    padding: 1.1rem;
+}
+
+#news-container img {
+    max-height: 20rem;
+    width: 100%;
+}
+
+
+#news-container .btn {
+    background-color: #de613b;
+    border: 1px #de613b solid;
+    margin: 1rem;
+
+}
+
+/* news form */
+
+.add-news div {
+    margin: 1rem;
+}
+
+/* Interface admin */
+.admin-news .head {
+    border-bottom: #de613b solid 2px;
+    text-transform: uppercase;
+    color: #de613b;
+}
+
+.img-admin {
+    width: 100%;
+}
+
+.admin-news .head th {
+    padding: 1rem;
+}
+
+.admin-news td {
+    padding: 1rem;
+}
+
