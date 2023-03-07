@@ -60,9 +60,9 @@ let News = (function () {
     loadMorebtn.addEventListener('click', () => {
         let boxes = [...document.querySelectorAll('.container #news-container .box')];
         for (let i = currentItem; i < currentItem + 10; i++ ) {
+            boxes[i].style.display = 'block';
         }
         currentItem += 10;
-        console.log(loadMorebtn);
     });
 
     reload.addEventListener('click', () => {
