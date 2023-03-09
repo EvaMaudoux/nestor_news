@@ -12,19 +12,19 @@ let News = (function () {
             return;
         }
 
-        // enregistrement du service worker
+        // Enregistrement du Service Worker qui s'occupe de l'interface offline
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('sw-offline.js', { scope: 'offline/' })
                 .then(function(registration) {
                     console.log('Service Worker registration successful with scope: ', registration.scope);
                 }).catch(function(error) {
-                // Enregistrement du service worker a échoué
-                    console.log('Service Worker registration failed: ', error);
+                console.log('Service Worker registration failed: ', error);
             });
         } else {
             console.log('Service Worker are not supported.');
         }
 
+        registerServiceWorker();
 
         // récupère les news depuis le serveur et les afficher dans la div "news-container"
         axios.get('news.api.php')
@@ -50,6 +50,18 @@ let News = (function () {
             offlineMessage.style.textAlign = 'center';
             document.body.prepend(offlineMessage);
         }
+
+        // popup de permission pour les notifications
+        let permission = document.getElementById('push-permission')
+        if (
+            (!permission)
+            // || (Notification.permission !== 'default')
+        ) return;
+
+        const button = document.createElement('button')
+        button.innerText = 'Recevoir notifications'
+        permission.appendChild(button)
+        button.addEventListener('click', askPermission)
     }
 
 
@@ -93,6 +105,44 @@ let News = (function () {
 
 
     /* METHODS */
+
+
+    async function askPermission(){
+        const permission = await Notification.requestPermission();
+        if(permission === 'granted') {
+            await registerServiceWorker();
+        }
+    }
+
+
+    async function registerServiceWorker () {
+        // await = la variable attend d'abord le retour de la fonction qui suit
+        const applicationServerKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+        const registration = await navigator.serviceWorker.register('sw-notifications.js', { scope: 'notifications' })
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: applicationServerKey,
+            })
+        } else {
+            console.log(JSON.stringify(subscription));
+        }
+        await saveSubscription(subscription);
+    }
+
+    async function saveSubscription(subscription) {
+            await fetch("notification.api.php", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: subscription.toJSON(),
+        });
+    }
+
 
     // récupère le code d'accès dans l'URL
     function getUsernameFromUrl(url) {
