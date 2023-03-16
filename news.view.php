@@ -31,5 +31,6 @@
 <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="node_modules/axios/dist/axios.min.js"></script>
 <script src="news.js"></script>
+<script src="notification.js"></script>
 </body>
 </html>

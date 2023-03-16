@@ -1,4 +1,4 @@
-let push = require("../2.0/vendor/minishlink/web-push");
+let push = require('web-push');
 
 let vapidKeys = {
     publicKey : 'BP1NYCsbIsYbEXSeK02wBt2-H1aPPlZJNDnJzkbHhKHZTn61uNz7mn94aMNnOVDDIwAxxoLy41lVkjyf3P-Dhtc\n',

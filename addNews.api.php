@@ -6,4 +6,4 @@ $connect = connect();
 
 $news = insertNews();
 
-
+// Récupère tous les enregistrements services workers

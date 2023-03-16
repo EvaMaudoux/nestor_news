@@ -1,4 +1,3 @@
-
 let News = (function () {
 
     const newsContainer = document.getElementById('news-container');
@@ -8,23 +7,26 @@ let News = (function () {
 
     function initialize() {
 
+        // Si pas de code d'accès dans l'URL, les news ne s'affichent pas
         if (window.location.href.indexOf('ak') === -1) {
             return;
         }
 
-        // Enregistrement du Service Worker qui s'occupe de l'interface offline
+
+        // enregistrement du service worker offline
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw-offline.js', { scope: 'offline/' })
+            navigator.serviceWorker.register('sw.js')
                 .then(function(registration) {
                     console.log('Service Worker registration successful with scope: ', registration.scope);
                 }).catch(function(error) {
+                // Enregistrement du service worker a échoué
                 console.log('Service Worker registration failed: ', error);
             });
         } else {
             console.log('Service Worker are not supported.');
         }
 
-        registerServiceWorker();
+
 
         // récupère les news depuis le serveur et les afficher dans la div "news-container"
         axios.get('news.api.php')
@@ -37,6 +39,7 @@ let News = (function () {
             .catch(error => {
                 console.log(error);
             });
+
 
         // Si l'utilisateur est hors ligne, petit message pour l'avertir
         if (!navigator.onLine) {
@@ -51,6 +54,7 @@ let News = (function () {
             document.body.prepend(offlineMessage);
         }
 
+
         // popup de permission pour les notifications
         let permission = document.getElementById('push-permission')
         if (
@@ -62,6 +66,7 @@ let News = (function () {
         button.innerText = 'Recevoir notifications'
         permission.appendChild(button)
         button.addEventListener('click', askPermission)
+
     }
 
 
@@ -74,11 +79,14 @@ let News = (function () {
         for (let i = currentItem; i < currentItem + 10; i++ ) {
             boxes[i].style.display = 'block';
         }
+        console.log(loadMorebtn);
         currentItem += 10;
     });
 
+    // bouton refresh
     reload.addEventListener('click', () => {
-        window.location.reload();
+        // window.location.reload();
+
     })
 
     // Event hors ligne (pas besoin d'actualiser la page)
@@ -105,43 +113,6 @@ let News = (function () {
 
 
     /* METHODS */
-
-
-    async function askPermission(){
-        const permission = await Notification.requestPermission();
-        if(permission === 'granted') {
-            await registerServiceWorker();
-        }
-    }
-
-
-    async function registerServiceWorker () {
-        // await = la variable attend d'abord le retour de la fonction qui suit
-        const applicationServerKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-        const registration = await navigator.serviceWorker.register('sw-notifications.js', { scope: 'notifications' })
-        let subscription = await registration.pushManager.getSubscription();
-
-        if (!subscription) {
-            subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: applicationServerKey,
-            })
-        } else {
-            console.log(JSON.stringify(subscription));
-        }
-        await saveSubscription(subscription);
-    }
-
-    async function saveSubscription(subscription) {
-            await fetch("notification.api.php", {
-            method: "post",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-            },
-            body: subscription.toJSON(),
-        });
-    }
 
 
     // récupère le code d'accès dans l'URL
@@ -219,10 +190,56 @@ let News = (function () {
             });
     }
 
+    async function askPermission(){
+        const permission = await Notification.requestPermission(
+            function(status) {
+                console.log('Statut de la permission de notifications: ', status);
+            }
+        );
+        if (permission === 'granted') {
+            await registerServiceWorker();
+        }
+    }
+
+    async function registerServiceWorker () {
+        // await = la variable attend d'abord le retour de la fonction qui suit
+        const serverKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+        const registration = await navigator.serviceWorker.register('sw.js')
+        let subscription = await registration.pushManager.getSubscription();
+
+        // S'il n'y a pas d'abonnement pour cet utilisateur, on en crée un
+        if(!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: serverKey,
+            })
+
+        }
+        await saveSubscription(subscription);
+    }
+
+    async function saveSubscription(subscription) {
+        await fetch("subscribe.api.php", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(subscription)
+        });
+    }
+
+    async function sendNotification(title, options) {
+        navigator.serviceWorker.ready.then(function(registration) {
+            registration.showNotification(title, options);
+        });
+    }
+
+
+
 
     return {
         init: initialize
     };
 })();
-
 

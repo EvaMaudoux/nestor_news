@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @return array|false
+ */
 function getLatestNews()
 {
     $connect = connect();
@@ -67,14 +70,9 @@ function insertNews()
 
         return $req;
     }
+
 }
 
-// delete une annonce
-function deleteNews($id) {
-    $connect = connect();
-    $req = $connect->prepare("DELETE FROM news WHERE id = :id");
-    $req->execute([':id' => $id]);
-}
 
 
 
