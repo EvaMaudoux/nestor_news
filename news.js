@@ -1,9 +1,12 @@
+
 let News = (function () {
 
     const newsContainer = document.getElementById('news-container');
     const username = getUsernameFromUrl(window.location.href);
     let loadMorebtn = document.getElementById('load-more');
     let reload = document.getElementById('reload');
+    const form = document.querySelector('#add-news-form');
+
 
     function initialize() {
 
@@ -12,8 +15,7 @@ let News = (function () {
             return;
         }
 
-
-        // enregistrement du service worker offline
+        // enregistrement du service worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(function(registration) {
@@ -26,12 +28,11 @@ let News = (function () {
             console.log('Service Worker are not supported.');
         }
 
-
-
         // récupère les news depuis le serveur et les afficher dans la div "news-container"
         axios.get('news.api.php')
             .then(response => {
                 let news = response.data;
+
                 displayNews(news);
                 localStorage.setItem('news', JSON.stringify(news));
 
@@ -62,10 +63,14 @@ let News = (function () {
             // || (Notification.permission !== 'default')
         ) return;
 
-        const button = document.createElement('button')
-        button.innerText = 'Recevoir notifications'
-        permission.appendChild(button)
-        button.addEventListener('click', askPermission)
+        const button = document.createElement('button');
+        button.innerText = 'Recevoir notifications';
+        button.style.color = '#de613b';
+        button.style.border = '2px solid #de613b';
+        button.style.margin = '1rem';
+        button.style.padding = '.5rem';
+        permission.appendChild(button);
+        button.addEventListener('click', askPermission);
 
     }
 
@@ -83,11 +88,15 @@ let News = (function () {
         currentItem += 10;
     });
 
+
+    // reload.addEventListener('click', sendNotification);
+
     // bouton refresh
     reload.addEventListener('click', () => {
-        // window.location.reload();
-
+         window.location.reload();
     })
+
+
 
     // Event hors ligne (pas besoin d'actualiser la page)
     window.addEventListener('offline', () => {
@@ -113,7 +122,6 @@ let News = (function () {
 
 
     /* METHODS */
-
 
     // récupère le code d'accès dans l'URL
     function getUsernameFromUrl(url) {
@@ -190,6 +198,11 @@ let News = (function () {
             });
     }
 
+    /*
+        NOTIFICATIONS
+     */
+
+    // Demande à l'utilisateur s'il accepte de recevoir des notifications (nécessaire)
     async function askPermission(){
         const permission = await Notification.requestPermission(
             function(status) {
@@ -199,10 +212,14 @@ let News = (function () {
         if (permission === 'granted') {
             await registerServiceWorker();
         }
+        if (permission === "denied") {
+            console.warn("L'utilisateur n'a pas autorisé les notifications");
+            return null;
+        }
     }
 
+    // S'il accepte, abonnement de l'utilisateur aux notifications pour un tel navigateur. S'il change de navigateur, nouvel abonnement
     async function registerServiceWorker () {
-        // await = la variable attend d'abord le retour de la fonction qui suit
         const serverKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
         const registration = await navigator.serviceWorker.register('sw.js')
         let subscription = await registration.pushManager.getSubscription();
@@ -213,11 +230,12 @@ let News = (function () {
                 userVisibleOnly: true,
                 applicationServerKey: serverKey,
             })
-
         }
+        // Sauvegarde du dernier abonnement en base de données. On sauvegarde les subscriptions pour pouvoir envoyer une notif à tous les abonnements
         await saveSubscription(subscription);
     }
 
+    // Fonction permettant de sauvegarder les abo en BD
     async function saveSubscription(subscription) {
         await fetch("subscribe.api.php", {
             method: "post",
@@ -228,14 +246,6 @@ let News = (function () {
             body: JSON.stringify(subscription)
         });
     }
-
-    async function sendNotification(title, options) {
-        navigator.serviceWorker.ready.then(function(registration) {
-            registration.showNotification(title, options);
-        });
-    }
-
-
 
 
     return {

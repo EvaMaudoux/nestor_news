@@ -4,7 +4,6 @@ const urlsToCache = [
     'news.css',
     'news.view.php',
     'news.api.php',
-    'addNews.api.php'
 ];
 
 self.addEventListener('install', event => {
@@ -46,16 +45,11 @@ self.addEventListener('fetch', event => {
     }
 });
 
-// event push
-self.addEventListener('push', function(event) {
+// event push activé (nécessaire pour les event de click sur la notif)
+self.addEventListener('push', function() {
     console.log('Réception de la notification push.');
+    });
 
-    let options = {
-        icon: ('nestor.png'),
-        body: 'Nestor a une nouvelle info pour toi.',
-    };
-    event.waitUntil(self.registration.showNotification('Nouvelle annonce !', options));
-});
 
 // Fonction de redirection quand l'utilisateur clique sur l'annonce
 self.addEventListener('notificationclick', (event) => {

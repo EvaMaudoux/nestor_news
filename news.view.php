@@ -18,6 +18,7 @@
 </div>
 <div id="load-more">Lire plus d'annonces</div>
 
+
 <menu class="main-menu position-fixed-bottom full-width mb-none">
     <a href="admin.news.view.php">ADMIN</a>
     <a href="news.view.php">NEWS</a>
@@ -31,6 +32,5 @@
 <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="node_modules/axios/dist/axios.min.js"></script>
 <script src="news.js"></script>
-<script src="notification.js"></script>
 </body>
 </html>

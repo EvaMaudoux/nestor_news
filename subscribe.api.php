@@ -1,4 +1,5 @@
 <?php
+
 require 'database.php';
 require 'news.lib.php';
 

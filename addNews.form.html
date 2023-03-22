@@ -10,16 +10,16 @@
     <title>Nouvelle annonce</title>
 </head>
 <body>
-<form action="./addNews.api.php" method="post" enctype="multipart/form-data">
+<form id="add-news-form" action="./addNews.api.php" method="post" enctype="multipart/form-data">
 
     <div class="container add-news">
         <div>
             <label for="title">Titre</label>
-            <input type="text" id="title" name="title">
+            <input type="text" id="title" name="title" placeholder="Titre de l'annonce">
         </div>
         <div>
             <label for="content">Contenu</label>
-            <textarea id="content" name="content" style="width: 100%; height: 150px;"></textarea>
+            <textarea id="content" name="content" placeholder="Contenu de l'annonce" style="width: 100%; height: 150px;"></textarea>
         </div>
         <div>
             <label for="upload">Upload image</label>
@@ -39,10 +39,10 @@
         </div>
         <div>
             <label for="date-publication">Publication postérieure</label>
-            <input type="datetime-local" id="date-publication" name="date_publication">
+            <input type="datetime-local" id="date-publication" name="date_publication" placeholder="Date de publication">
         </div>
         <div>
-            <button type="submit">Soumettre</button>
+            <input type="submit" value="Ajouter l'annonce">
         </div>
     </div>
 </form>
@@ -52,5 +52,11 @@
     <a href="addNews.form.html">ADD</a>
 </menu>
 </body>
+<script src="notif.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        Notif.init();
+    }, true);
+</script>
 </html>
 
