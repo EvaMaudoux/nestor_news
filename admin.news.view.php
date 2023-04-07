@@ -15,7 +15,18 @@
 require 'database.php';
 require 'news.lib.php';
 
+
+
 $connect = connect();
+
+if (isset($_GET['edit'])) {
+    $edit_id = $_GET['edit'];
+    $sql = "SELECT * FROM news WHERE id = :id";
+    $req = $connect->prepare($sql);
+    $req->execute([':id' => $edit_id]);
+    $edit_news = $req->fetch(PDO::FETCH_ASSOC);
+}
+
 
 $sql = "SELECT *
         FROM news 
@@ -25,12 +36,26 @@ $req = $connect->prepare($sql);
 $req->execute();
 $news = $req->fetchAll(PDO::FETCH_ASSOC);
 
-// vérifie si une news doit être supprimée, si oui, appel de la fonction
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    deleteNews($id);
-}
 ?>
+
+<?php if (isset($edit_news)) : ?>
+    <form action="editNews.php" method="post">
+        <input type="hidden" name="id" value="<?= $edit_news['id'] ?>">
+        <label for="title">Titre :</label>
+        <input type="text" name="title" value="<?= $edit_news['title'] ?>">
+        <label for="content">Contenu :</label>
+        <textarea name="content"><?= $edit_news['content'] ?></textarea>
+        <label for="image">Image :</label>
+        <input type="text" name="image" value="<?= $edit_news['image'] ?>">
+        <label for="status">Statut :</label>
+        <select name="status">
+            <option value="1" <?= $edit_news['status'] ? 'selected' : '' ?>>Publié</option>
+            <option value="0" <?= !$edit_news['status'] ? 'selected' : '' ?>>Non publié</option>
+        </select>
+        <button type="submit">Mettre à jour</button>
+    </form>
+<?php endif; ?>
+
 
 <main class="container-news my-3">
     <table class="admin-news table">
@@ -54,9 +79,11 @@ if (isset($_GET['delete'])) {
                 <td><?= $new['date_publication']; ?></td>
                 <td><?= $new['read_by']; ?></td>
                 <td>
-                    <a href="">Modifier</a>
-                    <a href="?delete=<?= $new['id'] ?>" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette news ?')">Supprimer</a>
+                    <a href="?edit=<?= $new['id'] ?>">Modifier</a>
+                    <a href="deleteNews.php?delete=<?= $new['id'] ?>" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette news ?')">Supprimer</a>
+
                 </td>
+
             </tr>
         <?php } ?>
     </table>

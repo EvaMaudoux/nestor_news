@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS -->
     <link rel="stylesheet" href="news.css">
+    <!-- Bootstrap -->
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
     <title>News</title>
 </head>
 <body>
 
 <button type="button" class="btn btn-secondary" id="reload">Rafraichir la page</button>
-<div id="push-permission" class="js-push-btn"></div>
 <div class="container">
     <!-- display news-->
     <div id="news-container"></div>

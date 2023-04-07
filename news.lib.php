@@ -29,6 +29,8 @@ function insertNews(): bool|int
 
     $title = $_POST['title'];
     $content = $_POST['content'];
+    // Forcer le fuseau horaire pour que la date de publication corresponde à la bonne heure (fuseau UTC par défaut)
+    date_default_timezone_set('Europe/Brussels');
     $created_at = date('Y-m-d H:i:s');
     $date_publication = !empty($_POST['date_publication']) ? $_POST['date_publication'] : date('Y-m-d H:i:s');
     $image = '';
@@ -70,8 +72,7 @@ function insertNews(): bool|int
 
     $result = $connect->exec($sql);
 
-   // header("Location: news.view.php?ak=eva");
-   // header("Location: addNews.form.html");
+   header("Location: news.view.php?ak=eva");
 
 return $result;
 }
