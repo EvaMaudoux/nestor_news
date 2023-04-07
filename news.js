@@ -1,11 +1,11 @@
-
 let News = (function () {
 
     const newsContainer = document.getElementById('news-container');
     const username = getUsernameFromUrl(window.location.href);
-    let loadMorebtn = document.getElementById('load-more');
+    const loadMorebtn = document.getElementById('load-more');
     let reload = document.getElementById('reload');
     const form = document.querySelector('#add-news-form');
+    const serverKey = "BDn_CICcdB6-9NWsLhu1M0TxaWJapXYIAbLfbmt8CJ57R3u1_j0LOCj7FaJ4he_jFXlNj80COOInb_QGgZi0uHk";
 
 
     function initialize() {
@@ -29,13 +29,11 @@ let News = (function () {
         }
 
         // récupère les news depuis le serveur et les afficher dans la div "news-container"
-        axios.get('news.api.php')
+        axios.post('news.api.php')
             .then(response => {
                 let news = response.data;
-
                 displayNews(news);
-                localStorage.setItem('news', JSON.stringify(news));
-
+                // console.log(news);
             })
             .catch(error => {
                 console.log(error);
@@ -57,11 +55,7 @@ let News = (function () {
 
 
         // popup de permission pour les notifications
-        let permission = document.getElementById('push-permission')
-        if (
-            (!permission)
-            // || (Notification.permission !== 'default')
-        ) return;
+        let btnPermission = document.getElementById('push-permission')
 
         const button = document.createElement('button');
         button.innerText = 'Recevoir notifications';
@@ -69,7 +63,8 @@ let News = (function () {
         button.style.border = '2px solid #de613b';
         button.style.margin = '1rem';
         button.style.padding = '.5rem';
-        permission.appendChild(button);
+        btnPermission.appendChild(button);
+
         button.addEventListener('click', askPermission);
 
     }
@@ -77,24 +72,30 @@ let News = (function () {
 
     /* EVENTS */
 
-    // bouton lire plus d'annonces
-    let currentItem = 10;
-    loadMorebtn.addEventListener('click', () => {
-        let boxes = [...document.querySelectorAll('.container #news-container .box')];
-        for (let i = currentItem; i < currentItem + 10; i++ ) {
-            boxes[i].style.display = 'block';
-        }
-        console.log(loadMorebtn);
-        currentItem += 10;
-    });
+    if (loadMorebtn) {
+        // bouton lire plus d'annonces
+        let currentItem = 10;
+        loadMorebtn.addEventListener('click', () => {
+            let boxes = [...document.querySelectorAll('.container #news-container .box')];
+            for (let i = currentItem; i < currentItem + 10; i++ ) {
+                boxes[i].style.display = 'block';
+            }
+            console.log(loadMorebtn);
+            currentItem += 10;
+        });
+    }
+
 
 
     // reload.addEventListener('click', sendNotification);
 
-    // bouton refresh
-    reload.addEventListener('click', () => {
-         window.location.reload();
-    })
+    if (reload) {
+        // bouton refresh
+        reload.addEventListener('click', () => {
+            window.location.reload();
+        })
+    }
+
 
 
 
@@ -130,10 +131,10 @@ let News = (function () {
     }
 
     // affiche les news sur la page news.view
-    function displayNews(news) {
+    function displayNews(item) {
         newsContainer.innerHTML = '';
 
-        news.forEach(article => {
+        item.forEach(article => {
             article.read_by = article.read_by || [];
 
             let newsDiv = document.createElement('div');
@@ -151,7 +152,12 @@ let News = (function () {
                 content += '<a href="' + article.pdf + '">Document PDF</a>';
             }
 
-            content += '<p class="card-text text-muted">' + article.date_publication + '</p>';
+            if (!article.date_publication) {
+                content += '<p class="card-text text-muted">' + new Date + '</p>';
+            } else {
+                content += '<p class="card-text text-muted">' + article.date_publication + '</p>';
+            }
+
 
             if (article.image != null && article.image !== '') {
                 content = '<img class="card-img-top" src="' + article.image + '">' + content;
@@ -210,6 +216,7 @@ let News = (function () {
             }
         );
         if (permission === 'granted') {
+            // i l'utiliateur donne a permission, on enregistre le service worker
             await registerServiceWorker();
         }
         if (permission === "denied") {
@@ -220,22 +227,28 @@ let News = (function () {
 
     // S'il accepte, abonnement de l'utilisateur aux notifications pour un tel navigateur. S'il change de navigateur, nouvel abonnement
     async function registerServiceWorker () {
-        const serverKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
         const registration = await navigator.serviceWorker.register('sw.js')
+        // Push manager permet d'abonner l'utilisateur au service de push du navigateur. Dispo a partir du service worker 'registration'
+        // renvoie les abonnements de l'utilisateur
         let subscription = await registration.pushManager.getSubscription();
 
         // S'il n'y a pas d'abonnement pour cet utilisateur, on en crée un
         if(!subscription) {
+
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
+                // signature pour s'authentifier au niveau du serveur push
                 applicationServerKey: serverKey,
             })
         }
-        // Sauvegarde du dernier abonnement en base de données. On sauvegarde les subscriptions pour pouvoir envoyer une notif à tous les abonnements
+
         await saveSubscription(subscription);
+        console.log(JSON.stringify(subscription));
     }
 
-    // Fonction permettant de sauvegarder les abo en BD
+
+
+    // On sauvegarde les subscriptions en base de données
     async function saveSubscription(subscription) {
         await fetch("subscribe.api.php", {
             method: "post",

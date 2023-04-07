@@ -9,7 +9,7 @@ $connect = connect();
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Insertion des données d'abonnement dans la table 'subscriptions'
-$sql = "INSERT INTO subscription (endpoint, auth, p256dh) VALUES ('".$data['endpoint']."', '".$data['keys']['auth']."', '".$data['keys']['p256dh']."')";
+$sql = "INSERT INTO subscription (endpoint, auth_token, public_key) VALUES ('".$data['endpoint']."', '".$data['keys']['auth']."', '".$data['keys']['p256dh']."')";
 
 if ($connect->query($sql) === TRUE) {
     // Envoi d'une réponse JSON avec un message de confirmation

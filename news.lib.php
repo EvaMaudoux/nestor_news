@@ -1,6 +1,10 @@
 <?php
 
-require_once 'vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
+
+use Minishlink\WebPush\Subscription;
+use Minishlink\WebPush\WebPush;
+
 
 /**
  * @return array|false
@@ -54,7 +58,7 @@ function insertNews(): bool|int
             move_uploaded_file($dirTempo, $pdf);
         }
 
-        // Récupération du lienz
+        // Récupération du lien
         if (!empty($_POST['link'])) {
             $link = $_POST['link'];
         }
@@ -67,54 +71,71 @@ function insertNews(): bool|int
     $result = $connect->exec($sql);
 
    // header("Location: news.view.php?ak=eva");
+   // header("Location: addNews.form.html");
 
-    return $result;
+return $result;
 }
 
 
-/*
-function notify () {
-    // sauvegarde des infos d'authentifications avec notre clé publique et privée
-    $auth = [
-        'VAPID' => [
-            'subject' => 'mailto:your@email.com',
-            // clé publique envoyée au client quand il s'abonne aux notifs
-            'publicKey' => 'BDn_CICcdB6-9NWsLhu1M0TxaWJapXYIAbLfbmt8CJ57R3u1_j0LOCj7FaJ4he_jFXlNj80COOInb_QGgZi0uHk',
-            // clé privée pour signer les notif push envoyées
-            'privateKey' => 'PCa_mV_QFjONEtyy_wchgv4xQCMB0TXQ8jMjjra__IU',
-        ]
-    ];
+function getSubscriptions() {
+    $connect = connect();
+
+    $sql = "SELECT DISTINCT *
+        FROM subscription";
+
+    $req = $connect->prepare($sql);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+function notify() {
 
     // On récupère les différents abonnements uniques
     $subscriptions = getSubscriptions();
-    // var_dump($subscriptions);
 
-    // nouvelle instance de la classe WebPush (fournie par la bibliothèque Minishlink/WebPush)
+    $auth = [
+        'VAPID' => [
+            'subject' => 'mailto:your@email.com',
+            'publicKey' => 'BDn_CICcdB6-9NWsLhu1M0TxaWJapXYIAbLfbmt8CJ57R3u1_j0LOCj7FaJ4he_jFXlNj80COOInb_QGgZi0uHk',
+            'privateKey' => 'PCa_mV_QFjONEtyy_wchgv4xQCMB0TXQ8jMjjra__IU',
+        ],
+    ];
     $webPush = new WebPush($auth);
 
-    // On boucle sur tous les abonnements aux notifications pour faire un queueNotification
-    foreach ($subscriptions as $subscription) {
 
-        $webPush->queueNotification(
-            Subscription::create([
-                'endpoint' => $subscription['endpoint'],
-                'publicKey' => $subscription['auth'],
-                'authToken' => $subscription['p256dh'],
-            ]),
-            json_encode([
-                'title' => 'Nouvelle annonce',
-                'message' => 'Nestor a publié une nouvelle annonce (sendNotif).',
-                'url' => 'https://www.gmail.com'
-            ]),
+        foreach ($subscriptions as $subscription) {
+            $payload = json_encode([
+                'title' => 'Pouet!',
+                'body' => 'Nestor a publié une annonce!',
+                'icon' => 'nestor.png',
+            ]);
+            $webPush->queueNotification(
+                Subscription::create([
+                    'endpoint' => $subscription['endpoint'],
+                    'publicKey' => $subscription['public_key'],
+                    'authToken' => $subscription['auth_token'],
+                    'contentEncoding' => $subscription['content_encoding']
+                ]),
+                $payload
 
-        );
-        $webPush->flush();
-    }
+            );
+        }
 
 
+        $results = $webPush->flush();
 
+        foreach ($results as $result) {
+            $endpoint = $result->getRequest()->getUri()->__toString();
+
+            if ($result->isSuccess()) {
+                var_dump("[v] Message sent successfully for subscription {$endpoint}.");
+            } else {
+                var_dump("[x] Message failed to sent for subscription {$endpoint}: {$result->getReason()}");
+            }
+        }
 }
-*/
+
 
 
 

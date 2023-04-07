@@ -11,7 +11,7 @@
 <body>
 
 <button type="button" class="btn btn-secondary" id="reload">Rafraichir la page</button>
-<div id="push-permission"></div>
+<div id="push-permission" class="js-push-btn"></div>
 <div class="container">
     <!-- display news-->
     <div id="news-container"></div>

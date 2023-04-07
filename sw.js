@@ -3,7 +3,6 @@ const urlsToCache = [
     'news.js',
     'news.css',
     'news.view.php',
-    'news.api.php',
 ];
 
 self.addEventListener('install', event => {
@@ -18,46 +17,46 @@ self.addEventListener('activate', function(event) {
     event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', event => {
-    // Vérifiez si la méthode est différente de POST
-    if (event.request.method !== 'POST') {
-        event.respondWith(
-            caches.match(event.request)
-                .then(response => {
-                    if (response) {
-                        return response;
-                    }
+/*
+self.addEventListener("fetch", (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            if (response) {
+                console.log("Found response in cache:", response);
+                return response;
+            }
 
-                    return fetch(event.request)
-                        .then(response => {
-                            // Clone the response since it can be consumed only once.
-                            const responseToCache = response.clone();
-
-                            caches.open(CACHE_NAME)
-                                .then(cache => {
-                                    cache.put(event.request, responseToCache);
-                                });
-
-                            return response;
-                        });
+            return fetch(event.request)
+                .then((response) => {
+                    console.log("Response from network is:", response);
+                    return response;
                 })
-        );
-    }
+                .catch((error) => {
+                    console.error("Fetching failed:", error);
+                    throw error;
+                });
+        })
+    );
 });
+*/
 
-// event push activé (nécessaire pour les event de click sur la notif)
-self.addEventListener('push', function() {
-    console.log('Réception de la notification push.');
-    });
+self.addEventListener('push', function (event) {
 
+    let pushData = event.data.json();
+    const options = {
+        body: pushData.body,
+        icon: pushData.icon,
+    };
+
+    event.waitUntil(self.registration.showNotification(pushData.title, options));
+});
 
 // Fonction de redirection quand l'utilisateur clique sur l'annonce
 self.addEventListener('notificationclick', (event) => {
     // console.log(event);
-event.waitUntil(
-    openUrl('http://localhost/stage/2.0/news.view.php?ak=eva')
-)
-    // console.log(event.notification.data);
+    event.waitUntil(
+        openUrl('https://5171-2a02-a03f-a87e-ca00-3196-9283-fb50-f03e.eu.ngrok.io/stage/2.0/news.view.php?ak=vav')
+    )
 })
 
 // Fonction permettant d'ouvrir l'Url de redirection au clic d'une notification
