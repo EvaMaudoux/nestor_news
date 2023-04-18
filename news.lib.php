@@ -67,8 +67,8 @@ function insertNews(): bool|int
     }
 
     // Insertion en bd
-    $sql = "INSERT INTO news (title, content, created_at, status, image, pdf, link, date_publication)
-              VALUES ('$title', '$content', '$created_at', '$status', '$image', '$pdf', '$link', '$date_publication')";
+    $sql = "INSERT INTO news (title, content, created_at, status, image, pdf, link, date_publication, notification_time)
+              VALUES ('$title', '$content', '$created_at', '$status', '$image', '$pdf', '$link', '$date_publication', '$date_publication')";
 
     $result = $connect->exec($sql);
 
@@ -76,6 +76,20 @@ function insertNews(): bool|int
 
 return $result;
 }
+
+function getNewsForNotification(): array
+{
+    $connect = connect();
+
+    $sql = "SELECT *
+            FROM news
+            WHERE status = 1 AND notification_sent = 0 AND notification_time <= NOW()";
+
+    $req = $connect->prepare($sql);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_ASSOC);
+}
+
 
 
 function getSubscriptions() {
@@ -92,9 +106,10 @@ function getSubscriptions() {
 
 function notify() {
 
-    // On récupère les différents abonnements uniques
+    // On récupère les différents abonnements en base de donnée
     $subscriptions = getSubscriptions();
 
+    // On s'authentifie au serveur Push
     $auth = [
         'VAPID' => [
             'subject' => 'mailto:your@email.com',
@@ -104,14 +119,20 @@ function notify() {
     ];
     $webPush = new WebPush($auth);
 
+    $newsList = getNewsForNotification();
 
+        // Pour chaque abonnement présent dans la base de données, on crée le payload de la notification
         foreach ($subscriptions as $subscription) {
+            foreach($newsList as $news) {
+                var_dump($news);
             $payload = json_encode([
-                'title' => 'Pouet!',
-                'body' => 'Nestor a publié une annonce!',
+                'title' => 'Nestor a publié une annonce !',
+                'body' => $news['title'],
                 'icon' => 'nestor.png',
             ]);
+            // chaque notification est placée dans une file d'attente
             $webPush->queueNotification(
+                // récupération des données authentifiantes de chaque abonné (de chaque utilisateur)
                 Subscription::create([
                     'endpoint' => $subscription['endpoint'],
                     'publicKey' => $subscription['public_key'],
@@ -121,9 +142,11 @@ function notify() {
                 $payload
 
             );
+            }
         }
 
 
+    // Envoie des notifications à chaque abonné
         $results = $webPush->flush();
 
         foreach ($results as $result) {
@@ -135,6 +158,15 @@ function notify() {
                 var_dump("[x] Message failed to sent for subscription {$endpoint}: {$result->getReason()}");
             }
         }
+
+    // Marquer les annonces comme notifiées
+    foreach ($newsList as $news) {
+        $connect = connect();
+        $id = $news['id'];
+        $sql = "UPDATE news SET notification_sent = 1 WHERE id = :id";
+        $req = $connect->prepare($sql);
+        $req->execute([':id' => $id]);
+    }
 }
 
 

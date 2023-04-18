@@ -6,8 +6,6 @@ require 'news.lib.php';
 
 $connect = connect();
 
-$news = insertNews();
+insertNews();
 
-if ($news) {
-    notify();
-}
+notify();

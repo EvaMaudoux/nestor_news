@@ -55,7 +55,7 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', (event) => {
     // console.log(event);
     event.waitUntil(
-        openUrl('localhost/stage/2.0/news.view.php?ak=vav')
+        openUrl('https://df58-81-240-95-131.ngrok-free.app/stage/2.0/news.view.php?ak=eva')
     )
 })
 

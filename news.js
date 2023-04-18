@@ -1,11 +1,15 @@
 let News = (function () {
 
-    const newsContainer = document.getElementById('news-container');
+    const newsContainer = document.getElementById('display-news');
     const username = getUsernameFromUrl(window.location.href);
     const loadMorebtn = document.getElementById('load-more');
     let reload = document.getElementById('reload');
-    const form = document.querySelector('#add-news-form');
     const serverKey = "BDn_CICcdB6-9NWsLhu1M0TxaWJapXYIAbLfbmt8CJ57R3u1_j0LOCj7FaJ4he_jFXlNj80COOInb_QGgZi0uHk";
+
+    const notificationWidget = document.getElementById('notificationWidget');
+    const notificationManager = document.getElementById('notificationManager');
+    const acceptNotifications = document.getElementById('acceptNotifications');
+    const refuseNotifications = document.getElementById('refuseNotifications');
 
 
     function initialize() {
@@ -80,7 +84,7 @@ let News = (function () {
         // bouton lire plus d'annonces
         let currentItem = 10;
         loadMorebtn.addEventListener('click', () => {
-            let boxes = [...document.querySelectorAll('.container #news-container .box')];
+            let boxes = [...document.querySelectorAll('.container #display-news .box')];
             for (let i = currentItem; i < currentItem + 10; i++ ) {
                 boxes[i].style.display = 'block';
             }
@@ -148,21 +152,20 @@ let News = (function () {
             }
 
             if (article.pdf != null && article.pdf !== '') {
-                content += '<a href="' + article.pdf + '">Document PDF</a>';
+                content += '<a href="' + article.pdf + '">Document</a>';
             }
 
             if (!article.date_publication) {
-                content += '<p class="card-text text-muted">' + new Date + '</p>';
+                content += '<p class="card-text text-muted">' + formatDate(new Date()) + '</p>';
             } else {
-                content += '<p class="card-text text-muted">' + article.date_publication + '</p>';
+                content += '<p class="card-text text-muted">' + formatDate(article.date_publication) + '</p>';
             }
-
 
             if (article.image != null && article.image !== '') {
                 content = '<img class="card-img-top" src="' + article.image + '">' + content;
             }
 
-            content += '<button type="button" class="btn btn-secondary read-button" data-id="' + article.id + '">Message reçu !</button>';
+            content += '<button type="button" class="btn btn-secondary read-button" data-id="' + article.id + '">J\'ai lu l\'annonce</button>';
 
             newsDiv.innerHTML = content;
             newsContainer.appendChild(newsDiv);
@@ -174,17 +177,32 @@ let News = (function () {
                 readButton.addEventListener('click', function () {
                     const newsId = this.getAttribute('data-id');
                     markAsRead(newsId);
-                    readButton.style.display = 'none';
+                    this.disabled = true;
+                    this.innerHTML = 'Annonce lue';
+                    readButton.style.backgroundColor = '#df8b79';
+                    readButton.style.borderColor = '#df8b79';
                     localStorage.setItem(`news-${article.id}-${username}`, 'true');
                 });
             } else {
-                readButton.style.display = 'none';
+                readButton.disabled = true;
+                readButton.style.backgroundColor = '#df8b79';
+                readButton.style.borderColor = '#df8b79';
+                readButton.innerHTML = 'Annonce lue';
+
             }
         });
     }
 
 
-    // Fonction notifiant que l'annonce a été lue (boutton "message reçu")
+    // Fonction de formatage des dates
+    function formatDate(date) {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = new Date(date).toLocaleDateString('fr-FR', options);
+        const formattedTime = new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        return 'Publié le ' + formattedDate + ' à ' + formattedTime;
+    }
+
+    // Fonction notifiant que l'annonce a été lue (bouton "message reçu")
     function markAsRead(newsId) {
         const data = new FormData();
         data.append('news_id', newsId);
@@ -203,17 +221,17 @@ let News = (function () {
 
 
     /*
-        PARTIE NOTIFICATIONS
+      PARTIE NOTIFICATIONS
      */
 
-    // Le navigateur demande à l'utilisateur s'il accepte de recevoir des notifications (validation éncessaire pour la suite)
+    // Le navigateur demande à l'utilisateur s'il accepte de recevoir des notifications (validation nécessaire pour la suite)
     async function askPermission(){
         const permission = await Notification.requestPermission(
             function(status) {
                 console.log('Statut de la permission de notifications: ', status);
             }
         );
-        // Si l'utiliateur donne sa permission, on enregistre le service worker
+        // Si l'utilisateur donne sa permission, on enregistre le service worker
         if (permission === 'granted') {
             await registerServiceWorker();
         }
@@ -223,58 +241,149 @@ let News = (function () {
         }
     }
 
-    // Pop up alert pour que l'utilisateur autorise ou bloque les notifications
-    const permission = localStorage.getItem('notificationPermission') || Notification.permission;
-    if (!localStorage.getItem('notificationsAccepted') && permission !== 'granted' && permission !== 'denied') {
-        // Event de scroll pour détecter quand l'utilisateur commence à faire défiler la page
-        window.addEventListener('scroll', function() {
-            // Vérif si l'utilisateur a fait défiler suffisamment pour afficher l'alerte
-            if (window.scrollY > 100) {
-                // Vérifier si l'alerte a déjà été affichée ou si l'utilisateur a déjà donné la permission
-                if (!localStorage.getItem('notificationAlertShown') && permission !== 'granted' && permission !== 'denied') {
-                    // Afficher l'alerte
-                    const notificationAlert = document.createElement('div');
-                    notificationAlert.classList.add('alert', 'alert-primary', 'alert-dismissible', 'fade', 'show');
-                    notificationAlert.innerHTML =`
-                          <h1>Restez au courant !</h1>
-                          <p>Si vous souhaitez recevoir une notification dès que Nestor publie une nouvelle annonce, autorisez l'affichage des notifications.</p>
-                          <button class="btn" style="background-color: #004085; color: #ffffff" id="manage-notif">Gérer mes notifications</button>
-                     `;
-                    const container = document.querySelector('.container'); // Changer la sélection pour cibler le conteneur où vous voulez afficher l'alerte
-                    container.insertBefore(notificationAlert, container.firstChild);
 
-                    // Event de clic au bouton "Gérer mes notifications"
-                    const manageNotifBtn = document.getElementById('manage-notif');
-                    manageNotifBtn.addEventListener('click', function() {
-                        askPermission();
-                        localStorage.setItem('notificationsAccepted', true);
-                        notificationAlert.remove();
-                    });
-
-                    // Stocker une variable indiquant que l'alerte a été affichée
-                    localStorage.setItem('notificationAlertShown', true);
-                }
-            }
-        });
-
-        // Event pour écouter les changements dans localStorage
-        window.addEventListener('storage', function(event) {
-            if (event.key === 'notificationPermission' && event.newValue !== 'granted') {
-                localStorage.removeItem('notificationsAccepted');
-                localStorage.removeItem('notificationAlertShown');
-            }
-        });
-
-        // Event pour supprimer les variables en localStorage avant de quitter la page
-        window.addEventListener('beforeunload', function() {
-            localStorage.removeItem('notificationsAccepted');
-            localStorage.removeItem('notificationAlertShown');
-        });
+    function showModal(modal) {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
     }
 
+    function hideModal(modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const permission = localStorage.getItem('notificationPermission') || Notification.permission;
+        if (!localStorage.getItem('notificationsAccepted') && permission !== 'granted' && permission !== 'denied') {
+            // Event de scroll pour détecter quand l'utilisateur commence à faire défiler la page
+            window.addEventListener('scroll', function() {
+                // Vérif si l'utilisateur a fait défiler suffisamment pour afficher l'alerte
+                if (window.scrollY > 100) {
+                    // Vérifier si l'alerte a déjà été affichée ou si l'utilisateur a déjà donné la permission
+                    if (!localStorage.getItem('notificationAlertShown') && permission !== 'granted' && permission !== 'denied') {
+                        // Créer le modal
+                        const modal = document.createElement('div');
+                        modal.className = 'modal fade';
+                        modal.setAttribute('id', 'notificationModal');
+                        modal.setAttribute('tabindex', '-1');
+                        modal.setAttribute('role', 'dialog');
+                        modal.setAttribute('aria-labelledby', 'notificationModalTitle');
+                        modal.setAttribute('aria-hidden', 'true');
+                        modal.innerHTML = `
+                        <div class="modal-dialog modal-dialog-centered" role="document" style="margin-top: -5%;">
+                            <div class="modal-content" style="background-color: rgba(222, 97, 59, 0.85); color: #fff">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="notificationModalTitle">Restez au courant !</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Si vous souhaitez recevoir une notification dès que Nestor publie une nouvelle annonce, autorisez l'affichage des notifications.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" style="background-color: white; color: #de613b; border: none" id="manage-notif">Gérer mes notifications</button>
+                                </div>
+                            </div>
+                        </div>`;
+
+                        document.body.appendChild(modal);
+
+                        // Afficher le modal
+                        showModal(modal);
+
+                        // Event de clic au bouton "Gérer mes notifications"
+                        const manageNotifBtn = document.getElementById('manage-notif');
+                        manageNotifBtn.addEventListener('click', async function() {
+                            await askPermission();
+                            localStorage.setItem('notificationsAccepted', true);
+                            await hideModal(modal);
+                        });
+
+                        // Stocker une variable indiquant que l'alerte a été affichée
+                        localStorage.setItem('notificationAlertShown', true);
+                    }
+                }
+            });
+
+            // Event pour écouter les changements dans localStorage
+            window.addEventListener('storage', function(event) {
+                if (event.key === 'notificationPermission' && event.newValue !== 'granted') {
+                    localStorage.removeItem('notificationsAccepted');
+                    localStorage.removeItem('notificationAlertShown');
+                }
+            });
+
+            // Event pour supprimer les variables en localStorage avant de quitter la page
+            window.addEventListener('beforeunload', function() {
+                localStorage.removeItem('notificationsAccepted');
+                localStorage.removeItem('notificationAlertShown');
+            });
+        }
+    });
 
 
-    // S'il accepte, abonnement de l'utilisateur aux notifications sur son navigateur actuel. ATTENTION, un utilisateur sur un navigateur A aura un abonnement différent sur un navigateur B
+    // Fonction pour fermer le widget
+    function closeWidget() {
+        notificationManager.style.display = 'none';
+    }
+
+    // Afficher le widget de gestion des notifications
+    notificationWidget.addEventListener('click', () => {
+        if (notificationManager.style.display === 'none') {
+            notificationManager.style.display = 'block';
+        } else {
+            closeWidget();
+        }
+    });
+
+    acceptNotifications.addEventListener('click', closeWidget);
+    refuseNotifications.addEventListener('click', closeWidget);
+
+
+    // l'utilisateur veut recevoir les notifs
+    acceptNotifications.addEventListener('click', async () => {
+        let permission = await Notification.requestPermission();
+
+        // Si l'utilisateur a précédemment refusé les notifications et qu'il clique maintenant sur "Accepter"
+        if (permission === 'denied') {
+            // Demander à nouveau la permission
+            permission = await Notification.requestPermission();
+        }
+
+        // S'abonner aux notifications seulement si la permission est accordée
+        if (permission === 'granted') {
+            // Vérifiez si l'utilisateur est abonné aux notifications et abonnez-le si ce n'est pas le cas.
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+                const newSubscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: serverKey,
+                });
+                await saveSubscription(newSubscription);
+            }
+        }
+    });
+
+    refuseNotifications.addEventListener('click', async () => {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (subscription) {
+            await subscription.unsubscribe();
+            await deleteSubscription(subscription);
+        }
+        Notification.requestPermission().then(permission => {
+            if (permission === 'denied') {
+                localStorage.setItem('notificationPermission', 'denied');
+            }
+        });
+    });
+
+
+
+
+    // Si l'utilisateur autorise les notifications, abonnement de l'utilisateur aux notifications sur son navigateur actuel. ATTENTION, un utilisateur sur un navigateur A aura un abonnement différent sur un navigateur B
     // Fonction d'enregistrement du service worker (appelée si permission === granted)
     async function registerServiceWorker () {
         const registration = await navigator.serviceWorker.register('sw.js')
@@ -299,6 +408,17 @@ let News = (function () {
     // Fonction de sauvegarde des subscriptions en base de données
     async function saveSubscription(subscription) {
         await fetch("subscribe.api.php", {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(subscription)
+        });
+    }
+
+    async function deleteSubscription(subscription) {
+        await fetch("unsubscribe.api.php", {
             method: "post",
             headers: {
                 "Content-Type": "application/json",
