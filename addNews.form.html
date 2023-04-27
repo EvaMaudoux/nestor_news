@@ -5,11 +5,16 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- css -->
     <link rel="stylesheet" href="news.css">
+    <!-- bootstrap -->
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <!-- librairie quill (formatage pour contenu de l'annonce) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <title>Nouvelle annonce</title>
 </head>
 <body>
+
 <form id="add-news-form" action="./addNews.api.php" method="post" enctype="multipart/form-data">
 
     <div class="container add-news">
@@ -19,7 +24,9 @@
         </div>
         <div>
             <label for="content">Contenu</label>
-            <textarea id="content" name="content" placeholder="Contenu de l'annonce" style="width: 100%; height: 150px;"></textarea>
+            <!-- quill pour formater le contenu de l'annonce -->
+            <div id="content" style="width: 100%; height: 150px;"></div>
+            <!--<textarea id="content" name="content" placeholder="Contenu de l'annonce" style="width: 100%; height: 150px;" ></textarea>-->
         </div>
         <div>
             <label for="upload">Upload image</label>
@@ -46,17 +53,49 @@
         </div>
     </div>
 </form>
+<!-- footer -->
 <menu class="main-menu position-fixed-bottom full-width mb-none">
     <a href="admin.news.view.php">ADMIN</a>
     <a href="news.view.php">NEWS</a>
     <a href="addNews.form.html">ADD</a>
 </menu>
-</body>
+
+<!-- script js principal -->
 <script src="news.js"></script>
+
 <script>
     window.addEventListener('DOMContentLoaded', function() {
         News.init();
     }, true);
 </script>
+
+<!-- librairie quill (formatage pour contenu de l'annonce) -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<script>
+    // Initialisation de Quill
+    let quill = new Quill('#content', {
+        theme: 'snow'
+    });
+
+    // Ajout d'un champ caché pour stocker les données de Quill
+    let hiddenInput = document.createElement('input');
+    hiddenInput.setAttribute('type', 'hidden');
+    hiddenInput.setAttribute('name', 'content');
+    document.getElementById('add-news-form').appendChild(hiddenInput);
+
+    // Mise à jour de la valeur du champ caché avant de soumettre le formulaire
+    document.getElementById('add-news-form').addEventListener('submit', function (event) {
+
+        event.preventDefault();
+
+        // Récupération de la valeur du champ 'content' et enregistrement dans le champ caché
+        hiddenInput.value = quill.root.innerHTML;
+
+        // Soumission du formulaire modifié
+        this.submit();
+    });
+</script>
+</body>
 </html>
 

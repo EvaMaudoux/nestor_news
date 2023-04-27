@@ -22,5 +22,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ':status' => $status
     ]);
 
-    header('Location: admin.news.view.php?ak=eva');
+    header('Location: admin.news.view.php');
 }

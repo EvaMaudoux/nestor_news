@@ -7,6 +7,24 @@ use Minishlink\WebPush\WebPush;
 
 
 /**
+ * Récupère toutes les annonces (pour la page admin)
+ * @return array|false
+ */
+function getAllNews(): bool|array
+{
+    $connect = connect();
+    $sql = "SELECT *
+        FROM news 
+        ORDER BY created_at DESC";
+
+    $req = $connect->prepare($sql);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_ASSOC);
+
+}
+
+/**
+ * Récupère les annonces à afficher aux utilisateurs
  * @return array|false
  */
 function getLatestNews(): bool|array
@@ -23,13 +41,17 @@ function getLatestNews(): bool|array
     return $req->fetchAll(PDO::FETCH_ASSOC);
 }
 
+/**
+ * Ajout d'une nouvelle annonce
+ * @return bool|int
+ */
 function insertNews(): bool|int
 {
     $connect = connect();
 
     $title = $_POST['title'];
     $content = $_POST['content'];
-    // Forcer le fuseau horaire pour que la date de publication corresponde à la bonne heure (fuseau UTC par défaut)
+    // On force le fuseau horaire pour que la date de publication corresponde à la bonne heure (fuseau UTC par défaut)
     date_default_timezone_set('Europe/Brussels');
     $created_at = date('Y-m-d H:i:s');
     $date_publication = !empty($_POST['date_publication']) ? $_POST['date_publication'] : date('Y-m-d H:i:s');
@@ -71,12 +93,31 @@ function insertNews(): bool|int
               VALUES ('$title', '$content', '$created_at', '$status', '$image', '$pdf', '$link', '$date_publication', '$date_publication')";
 
     $result = $connect->exec($sql);
-
    header("Location: news.view.php?ak=eva");
 
 return $result;
 }
 
+
+/**
+ * Modifie une annonce (page admin)
+ * @return void
+ */
+function editNews() {
+    $connect = connect();
+    if (isset($_GET['edit'])) {
+        $edit_id = $_GET['edit'];
+        $sql = "SELECT * FROM news WHERE id = :id";
+        $req = $connect->prepare($sql);
+        $req->execute([':id' => $edit_id]);
+        return $req->fetch(PDO::FETCH_ASSOC);
+    }
+}
+
+/**
+ * Récupère les annonces dont la notification n'a pas encore été envoyée aux utilisateurs (annonce datée postérieurement)
+ * @return array
+ */
 function getNewsForNotification(): array
 {
     $connect = connect();
@@ -90,9 +131,46 @@ function getNewsForNotification(): array
     return $req->fetchAll(PDO::FETCH_ASSOC);
 }
 
+/**
+ * Récupère les utilisateurs ayant interagi avec des annonces (username = code d'accès URL)
+ * @return bool|array
+ */
+function getAllUsernames(): bool|array
+{
+    $connect = connect();
+
+    $sql = "SELECT DISTINCT username FROM user_read_news";
+    $req = $connect->prepare($sql);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_COLUMN);
+}
 
 
-function getSubscriptions() {
+/**
+ * Récupère la/les annonce(s) lue(s) pour un utilisateur donné (en paramètre)
+ * @param $username
+ * @return bool|array
+ */
+function getReadNewsByUsername($username): bool|array
+{
+    $connect = connect();
+
+    $sql = "SELECT news.* FROM user_read_news
+            INNER JOIN news ON user_read_news.news_id = news.id
+            WHERE user_read_news.username = :username";
+    $req = $connect->prepare($sql);
+    $req->bindParam(':username', $username);
+    $req->execute();
+    return $req->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+/**
+ * Récupère les abonnements aux notifications
+ * @return bool|array
+ */
+function getSubscriptions(): bool|array
+{
     $connect = connect();
 
     $sql = "SELECT DISTINCT *
@@ -104,12 +182,17 @@ function getSubscriptions() {
 }
 
 
+/**
+ * Envoi d'une notification via WebPush
+ * @return void
+ * @throws ErrorException
+ */
 function notify() {
 
-    // On récupère les différents abonnements en base de donnée
+    // Je récupère les différents abonnements aux notifications présents en base de donnée
     $subscriptions = getSubscriptions();
 
-    // On s'authentifie au serveur Push
+    // Je m'authentifie auprès du serveur Push avec ma clé privée et ma clé publique générées
     $auth = [
         'VAPID' => [
             'subject' => 'mailto:your@email.com',
@@ -117,22 +200,25 @@ function notify() {
             'privateKey' => 'PCa_mV_QFjONEtyy_wchgv4xQCMB0TXQ8jMjjra__IU',
         ],
     ];
+
     $webPush = new WebPush($auth);
 
+    // S'il y a des annonces datées postérieurement, je les récupère
     $newsList = getNewsForNotification();
 
-        // Pour chaque abonnement présent dans la base de données, on crée le payload de la notification
-        foreach ($subscriptions as $subscription) {
-            foreach($newsList as $news) {
-                var_dump($news);
+    // Pour chaque abonnement présent dans la base de données, création du payload de la notification
+    foreach ($subscriptions as $subscription) {
+        // Pour les annonces datées postérieurement
+        foreach($newsList as $news) {
+            // var_dump($news);
             $payload = json_encode([
-                'title' => 'Nestor a publié une annonce !',
+                'title' => 'Nouvelle annonce !',
                 'body' => $news['title'],
                 'icon' => 'nestor.png',
             ]);
             // chaque notification est placée dans une file d'attente
             $webPush->queueNotification(
-                // récupération des données authentifiantes de chaque abonné (de chaque utilisateur)
+                // récupération des données authentifiantes de chaque abonnement (de chaque utilisateur)
                 Subscription::create([
                     'endpoint' => $subscription['endpoint'],
                     'publicKey' => $subscription['public_key'],
@@ -140,13 +226,11 @@ function notify() {
                     'contentEncoding' => $subscription['content_encoding']
                 ]),
                 $payload
-
             );
-            }
         }
+    }
 
-
-    // Envoie des notifications à chaque abonné
+    // Envoi des notifications à chaque abonné
         $results = $webPush->flush();
 
         foreach ($results as $result) {
@@ -159,7 +243,7 @@ function notify() {
             }
         }
 
-    // Marquer les annonces comme notifiées
+    // Je marque les annonces comme 'notifiées'
     foreach ($newsList as $news) {
         $connect = connect();
         $id = $news['id'];

@@ -15,75 +15,91 @@
 require 'database.php';
 require 'news.lib.php';
 
-
-
 $connect = connect();
 
-if (isset($_GET['edit'])) {
-    $edit_id = $_GET['edit'];
-    $sql = "SELECT * FROM news WHERE id = :id";
-    $req = $connect->prepare($sql);
-    $req->execute([':id' => $edit_id]);
-    $edit_news = $req->fetch(PDO::FETCH_ASSOC);
-}
+$edit_news = editNews();
+$news = getAllNews();
 
-
-$sql = "SELECT *
-        FROM news 
-        ORDER BY created_at DESC";
-
-$req = $connect->prepare($sql);
-$req->execute();
-$news = $req->fetchAll(PDO::FETCH_ASSOC);
-
+$usernames = getAllUsernames();
 ?>
 
-<?php if (isset($edit_news)) : ?>
+<!--  formulaire pour savoir quel utilisateur a lu quelle annonce -->
+<h4>Qui a lu quoi?</h4>
+<form method="POST" action="admin.news.view.php" class="my-3">
+    <select name="username" class="m-2">
+        <option value="">Sélectionnez un utilisateur</option>
+        <?php foreach ($usernames as $username): ?>
+            <option value="<?php echo $username; ?>"><?php echo $username; ?></option>
+        <?php endforeach; ?>
+    </select>
+    <input type="submit" value="Annonces lues" />
+</form>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $selectedUsername = $_POST['username'];
+
+    if (!empty($selectedUsername)) {
+        $readNews = getReadNewsByUsername($selectedUsername);
+
+        echo "<p class='m-2'>Annonces lues par {$selectedUsername} : </p>";
+        echo "<ul>";
+        foreach ($readNews as $readNew) {
+            echo "<li>Annonce " . $readNew['id'] . " - " . $readNew['title'] ."</li>";
+        }
+        echo "</ul>";
+    }
+}
+if (isset($edit_news)) : ?>
+
+<!-- formulaire de modification d'annonce -->
+<h4>Modifier l'annonce</h4>
     <form action="editNews.php" method="post">
         <input type="hidden" name="id" value="<?= $edit_news['id'] ?>">
         <label for="title">Titre :</label>
-        <input type="text" name="title" value="<?= $edit_news['title'] ?>">
+        <input type="text" name="title" class='m-2' value="<?= $edit_news['title'] ?>">
+        <br>
         <label for="content">Contenu :</label>
         <textarea name="content"><?= $edit_news['content'] ?></textarea>
+        <br>
         <label for="image">Image :</label>
         <input type="text" name="image" value="<?= $edit_news['image'] ?>">
+        <br>
         <label for="status">Statut :</label>
-        <select name="status">
+        <select name="status" class='m-2'>>
             <option value="1" <?= $edit_news['status'] ? 'selected' : '' ?>>Publié</option>
             <option value="0" <?= !$edit_news['status'] ? 'selected' : '' ?>>Non publié</option>
         </select>
-        <button type="submit">Mettre à jour</button>
+        <br>
+        <button type="submit" style="padding-left: 0">Mettre à jour</button>
     </form>
 <?php endif; ?>
 
-
+<!-- gestion de toutes les annonces -->
+<h4>Gestion des annonces</h4>
 <main class="container-news my-3">
-    <table class="admin-news table">
-
-        <tr class="head lead">
+        <table class="admin-news table">
+        <tr>
             <th>Titre</th>
             <th>Contenu</th>
             <th>Image</th>
             <th>Statut</th>
             <th>Publication</th>
-            <th>Lu par </th>
             <th>Actions </th>
         </tr>
 
         <?php foreach ($news as $new) { ?>
             <tr>
                 <td class="col-2"><?= $new['title']; ?></td>
-                <td class="col-6"><?= $new['content']; ?></td>
-                <td><img class="img-admin" src="<?= $new['image'] ?>" alt="<?= $new['title'] ?>"></td>
-                <td><?= $new['status'] ? 'Publié' : 'Non publié' ?></td>
-                <td><?= $new['date_publication']; ?></td>
-                <td><?= $new['read_by']; ?></td>
-                <td>
+                <td class="col-3"><?= $new['content']; ?></td>
+                <td class="col-2"><img class="img-admin" src="<?= $new['image'] ?>" alt="<?= $new['title'] ?>"></td>
+                <td class="col-1"><?= $new['status'] ? 'Publié' : 'Non publié' ?></td>
+                <td class="col-2"><?= $new['date_publication']; ?></td>
+                <td class="col-2">
                     <a href="?edit=<?= $new['id'] ?>">Modifier</a>
                     <a href="deleteNews.php?delete=<?= $new['id'] ?>" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette news ?')">Supprimer</a>
 
                 </td>
-
             </tr>
         <?php } ?>
     </table>
